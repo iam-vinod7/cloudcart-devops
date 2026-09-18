@@ -42,3 +42,12 @@ def test_get_notes(client):
 
     assert len(data) == 1
     assert data[0]["text"] == "Learn Docker"
+
+
+def test_version(client):
+    response = client.get("/version")
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+    assert data["version"] == "v2"

@@ -1,8 +1,6 @@
 import os
-
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-
 
 db = SQLAlchemy()
 
@@ -33,10 +31,13 @@ def create_app(test_config=None):
     @app.post("/notes")
     def create_note():
         data = request.get_json(silent=True) or {}
+
         text = data.get("text", "").strip()
 
         if not text:
-            return jsonify({"error": "text is required"}), 400
+            return jsonify({
+                "error": "text is required"
+            }), 400
 
         note = Note(text=text)
 
@@ -60,13 +61,22 @@ def create_app(test_config=None):
             for note in notes
         ]), 200
 
+    @app.get("/version")
+    def version():
+        return jsonify({
+            "version": "v2",
+            "message": "Flask Notes running on Kubernetes"
+        }), 200
+
     return app
 
 
 if __name__ == "__main__":
     app = create_app()
+
     app.run(
         host="0.0.0.0",
         port=5000,
         debug=True
     )
+
