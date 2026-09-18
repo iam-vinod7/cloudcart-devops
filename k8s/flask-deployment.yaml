@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-notes
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: flask-notes
+
+  template:
+    metadata:
+      labels:
+        app: flask-notes
+
+    spec:
+      containers:
+        - name: flask-notes
+          image: vinodjb07/flask-notes-devops:5
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 5000
+
+          envFrom:
+            - configMapRef:
+                name: flask-notes-config
+
+            - secretRef:
+                name: flask-notes-secret
+
+          readinessProbe:
+            httpGet:
+              path: /notes
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /notes
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
