@@ -1,7 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: flask-notes
+
 spec:
   replicas: 3
 
@@ -17,7 +19,8 @@ spec:
     spec:
       containers:
         - name: flask-notes
-          image: 297165774342.dkr.ecr.us-east-1.amazonaws.com/flask-notes-devops:5
+
+          image: 297165774342.dkr.ecr.us-east-1.amazonaws.com/flask-notes-devops:7
           imagePullPolicy: Always
 
           ports:
@@ -34,13 +37,19 @@ spec:
             httpGet:
               path: /notes
               port: 5000
+
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
 
           livenessProbe:
             httpGet:
               path: /notes
               port: 5000
+
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
 

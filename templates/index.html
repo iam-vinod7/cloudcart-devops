@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CloudCart | Modern Store</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Inter, Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, #261458, transparent 32%),
+                radial-gradient(circle at top right, #073b4c, transparent 30%),
+                #080b14;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        nav {
+            max-width: 1250px;
+            margin: auto;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            color: #8b5cf6;
+        }
+
+        nav ul {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+            color: #b8bfd0;
+        }
+
+        nav li {
+            cursor: pointer;
+        }
+
+        nav li:hover {
+            color: white;
+        }
+
+        .cart-button {
+            background: #fff;
+            color: #080b14;
+            border: none;
+            border-radius: 14px;
+            padding: 12px 18px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .hero {
+            max-width: 1250px;
+            margin: auto;
+            padding: 70px 24px 55px;
+            display: grid;
+            grid-template-columns: 1.15fr .85fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 14px;
+            border: 1px solid #51418d;
+            border-radius: 50px;
+            color: #c4b5fd;
+            background: rgba(139, 92, 246, .12);
+            margin-bottom: 22px;
+        }
+
+        h1 {
+            font-size: clamp(50px, 6vw, 82px);
+            line-height: .98;
+            letter-spacing: -4px;
+            max-width: 760px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #8b5cf6, #22d3ee);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .hero p {
+            color: #aab1c3;
+            margin-top: 25px;
+            line-height: 1.8;
+            max-width: 620px;
+            font-size: 18px;
+        }
+
+        .hero-actions {
+            margin-top: 32px;
+            display: flex;
+            gap: 14px;
+        }
+
+        .primary,
+        .secondary {
+            padding: 15px 24px;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+        }
+
+        .primary {
+            color: white;
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+        }
+
+        .secondary {
+            color: white;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.13);
+        }
+
+        .hero-card {
+            border-radius: 32px;
+            min-height: 420px;
+            padding: 35px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            background:
+                linear-gradient(135deg, rgba(139,92,246,.3), rgba(34,211,238,.08)),
+                rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.12);
+            box-shadow: 0 40px 100px rgba(0,0,0,.4);
+            backdrop-filter: blur(18px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-product {
+            font-size: 130px;
+            position: absolute;
+            top: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            filter: drop-shadow(0 25px 25px rgba(0,0,0,.4));
+        }
+
+        .hero-card h2 {
+            font-size: 28px;
+        }
+
+        .hero-card p {
+            margin-top: 8px;
+        }
+
+        .price {
+            margin-top: 12px;
+            font-size: 25px;
+            font-weight: 800;
+        }
+
+        .section {
+            max-width: 1250px;
+            margin: auto;
+            padding: 50px 24px 100px;
+        }
+
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            margin-bottom: 28px;
+        }
+
+        .section-heading h2 {
+            font-size: 38px;
+            letter-spacing: -1.5px;
+        }
+
+        .section-heading p {
+            color: #8891a4;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .search {
+            flex: 1;
+            min-width: 250px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.1);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 14px;
+            outline: none;
+        }
+
+        .chip {
+            border: 1px solid rgba(255,255,255,.1);
+            background: rgba(255,255,255,.05);
+            color: #b9c0cf;
+            padding: 12px 17px;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+
+        .chip.active {
+            background: #7c3aed;
+            color: white;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .product {
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(255,255,255,.09);
+            border-radius: 24px;
+            overflow: hidden;
+            transition: .25s;
+        }
+
+        .product:hover {
+            transform: translateY(-8px);
+            border-color: #6d5fc4;
+            box-shadow: 0 25px 50px rgba(0,0,0,.3);
+        }
+
+        .product-image {
+            height: 210px;
+            display: grid;
+            place-items: center;
+            font-size: 84px;
+            background:
+                radial-gradient(circle, rgba(139,92,246,.24), transparent 60%);
+        }
+
+        .product-info {
+            padding: 20px;
+        }
+
+        .category {
+            color: #8b96ac;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .product h3 {
+            margin-top: 7px;
+            font-size: 18px;
+        }
+
+        .product-bottom {
+            margin-top: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .add {
+            background: white;
+            color: #0b0d13;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .cart {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: min(400px, 100%);
+            height: 100vh;
+            background: #10131d;
+            padding: 28px;
+            z-index: 10;
+            transition: .3s;
+            border-left: 1px solid rgba(255,255,255,.1);
+            box-shadow: -30px 0 60px rgba(0,0,0,.4);
+        }
+
+        .cart.open {
+            right: 0;
+        }
+
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close {
+            border: none;
+            color: white;
+            background: transparent;
+            font-size: 26px;
+            cursor: pointer;
+        }
+
+        #cart-items {
+            margin-top: 30px;
+        }
+
+        .cart-item {
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .total {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .checkout {
+            margin-top: 20px;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        footer {
+            border-top: 1px solid rgba(255,255,255,.08);
+            text-align: center;
+            color: #747d91;
+            padding: 30px;
+        }
+
+        @media(max-width: 900px) {
+            .hero {
+                grid-template-columns: 1fr;
+            }
+
+            .products {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            nav ul {
+                display: none;
+            }
+        }
+
+        @media(max-width: 520px) {
+            .products {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                letter-spacing: -2px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<nav>
+    <div class="logo">Cloud<span>Cart</span></div>
+
+    <ul>
+        <li>Home</li>
+        <li>Shop</li>
+        <li>New Arrivals</li>
+        <li>Collections</li>
+    </ul>
+
+    <button class="cart-button" onclick="toggleCart()">
+        Cart (<span id="cart-count">0</span>)
+    </button>
+</nav>
+
+<section class="hero">
+
+    <div>
+        <div class="badge">⚡ Running live on Amazon EKS</div>
+
+        <h1>
+            Upgrade your
+            <span class="gradient-text">everyday.</span>
+        </h1>
+
+        <p>
+            Discover premium tech and lifestyle products in a modern
+            cloud-native storefront powered by Flask, Docker, Kubernetes
+            and AWS.
+        </p>
+
+        <div class="hero-actions">
+            <button class="primary"
+                    onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})">
+                Shop collection
+            </button>
+
+            <button class="secondary">
+                Explore releases
+            </button>
+        </div>
+    </div>
+
+    <div class="hero-card">
+
+        <div class="hero-product">🎧</div>
+
+        <div>
+            <span class="category">Featured</span>
+
+            <h2>CloudPods Max</h2>
+
+            <p>
+                Spatial sound. Minimal design. Maximum focus.
+            </p>
+
+            <div class="price">$299</div>
+        </div>
+
+    </div>
+
+</section>
+
+<section class="section" id="shop">
+
+    <div class="section-heading">
+        <div>
+            <h2>Trending now</h2>
+            <p>Products picked for your setup.</p>
+        </div>
+    </div>
+
+    <div class="toolbar">
+
+        <input
+            class="search"
+            id="search"
+            placeholder="Search products..."
+            oninput="renderProducts()"
+        >
+
+        <button class="chip active" onclick="filterCategory('All', this)">
+            All
+        </button>
+
+        <button class="chip" onclick="filterCategory('Audio', this)">
+            Audio
+        </button>
+
+        <button class="chip" onclick="filterCategory('Wearables', this)">
+            Wearables
+        </button>
+
+        <button class="chip" onclick="filterCategory('Workspace', this)">
+            Workspace
+        </button>
+
+    </div>
+
+    <div class="products" id="products"></div>
+
+</section>
+
+<aside class="cart" id="cart">
+
+    <div class="cart-header">
+        <h2>Your Cart</h2>
+
+        <button class="close" onclick="toggleCart()">×</button>
+    </div>
+
+    <div id="cart-items">
+        Your cart is empty.
+    </div>
+
+    <div class="total">
+        <span>Total</span>
+        <span id="total">$0</span>
+    </div>
+
+    <button class="checkout" onclick="checkout()">
+        Checkout
+    </button>
+
+</aside>
+
+<footer>
+    CloudCart • Flask • Docker • Amazon EKS • PostgreSQL • AWS EBS
+</footer>
+
+<script>
+
+const products = [
+    {name:"CloudPods Max", category:"Audio", price:299, icon:"🎧"},
+    {name:"Nova Watch", category:"Wearables", price:249, icon:"⌚"},
+    {name:"Orbit Keyboard", category:"Workspace", price:129, icon:"⌨️"},
+    {name:"Pulse Speaker", category:"Audio", price:179, icon:"🔊"},
+    {name:"Air Mouse", category:"Workspace", price:89, icon:"🖱️"},
+    {name:"Vision Glass", category:"Wearables", price:329, icon:"🕶️"},
+    {name:"Flow Camera", category:"Workspace", price:219, icon:"📷"},
+    {name:"Mini Buds", category:"Audio", price:99, icon:"🎵"}
+];
+
+let cart = [];
+let activeCategory = "All";
+
+function renderProducts() {
+
+    const search =
+        document.getElementById("search").value.toLowerCase();
+
+    const filtered = products.filter(product => {
+
+        const matchesCategory =
+            activeCategory === "All" ||
+            product.category === activeCategory;
+
+        const matchesSearch =
+            product.name.toLowerCase().includes(search);
+
+        return matchesCategory && matchesSearch;
+    });
+
+    document.getElementById("products").innerHTML =
+        filtered.map(product => `
+
+            <div class="product">
+
+                <div class="product-image">
+                    ${product.icon}
+                </div>
+
+                <div class="product-info">
+
+                    <div class="category">
+                        ${product.category}
+                    </div>
+
+                    <h3>${product.name}</h3>
+
+                    <div class="product-bottom">
+
+                        <strong>$${product.price}</strong>
+
+                        <button
+                            class="add"
+                            onclick="addToCart('${product.name}')">
+                            +
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        `).join("");
+}
+
+function filterCategory(category, button) {
+
+    activeCategory = category;
+
+    document.querySelectorAll(".chip")
+        .forEach(btn => btn.classList.remove("active"));
+
+    button.classList.add("active");
+
+    renderProducts();
+}
+
+function addToCart(name) {
+
+    const product =
+        products.find(item => item.name === name);
+
+    cart.push(product);
+
+    updateCart();
+
+    document.getElementById("cart")
+        .classList.add("open");
+}
+
+function updateCart() {
+
+    document.getElementById("cart-count").textContent =
+        cart.length;
+
+    if (cart.length === 0) {
+
+        document.getElementById("cart-items").innerHTML =
+            "Your cart is empty.";
+
+    } else {
+
+        document.getElementById("cart-items").innerHTML =
+            cart.map((item, index) => `
+
+                <div class="cart-item">
+
+                    <span>
+                        ${item.icon} ${item.name}
+                    </span>
+
+                    <span>
+                        $${item.price}
+                        &nbsp;
+                        <button onclick="removeItem(${index})">
+                            ×
+                        </button>
+                    </span>
+
+                </div>
+
+            `).join("");
+    }
+
+    const total =
+        cart.reduce((sum, item) => sum + item.price, 0);
+
+    document.getElementById("total").textContent =
+        "$" + total;
+}
+
+function removeItem(index) {
+
+    cart.splice(index, 1);
+
+    updateCart();
+}
+
+function toggleCart() {
+
+    document.getElementById("cart")
+        .classList.toggle("open");
+}
+
+function checkout() {
+
+    if (cart.length === 0) {
+
+        alert("Your cart is empty.");
+
+        return;
+    }
+
+    alert(
+        "Demo checkout complete!\\n\\n" +
+        "No real payment was processed."
+    );
+
+    cart = [];
+
+    updateCart();
+}
+
+renderProducts();
+
+</script>
+
+</body>
+</html>

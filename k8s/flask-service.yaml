@@ -7,8 +7,9 @@ spec:
     app: flask-notes
 
   ports:
-    - port: 5000
+    - name: http
+      protocol: TCP
+      port: 80
       targetPort: 5000
 
-  type: ClusterIP
-
+  type: LoadBalancer

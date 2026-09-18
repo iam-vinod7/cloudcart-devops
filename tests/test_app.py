@@ -50,4 +50,11 @@ def test_version(client):
     assert response.status_code == 200
 
     data = response.get_json()
-    assert data["version"] == "v2"
+    assert data["version"] == "v4"
+
+
+def test_metrics(client):
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert b"cloudcart_http_requests_total" in response.data
