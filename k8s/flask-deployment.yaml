@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: flask-notes
-          image: vinodjb07/flask-notes-devops:5
+          image: 297165774342.dkr.ecr.us-east-1.amazonaws.com/flask-notes-devops:5
           imagePullPolicy: Always
 
           ports:

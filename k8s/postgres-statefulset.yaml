@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
+
 spec:
   serviceName: postgres
   replicas: 1
@@ -42,6 +43,9 @@ spec:
                   name: flask-notes-secret
                   key: POSTGRES_PASSWORD
 
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
           readinessProbe:
             exec:
               command:
@@ -62,6 +66,8 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
+
+        storageClassName: gp3
 
         resources:
           requests:
