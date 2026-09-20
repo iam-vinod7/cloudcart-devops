@@ -293,13 +293,6 @@ Prometheus
    ↓
 Grafana
 ```
-
-## LinkedIn demo
-
-A short video walkthrough plan is available in [docs/linkedin-demo-video.md](docs/linkedin-demo-video.md).
-
-## Author
-
 **Vinod**
 
 - GitHub: [iam-vinod7](https://github.com/iam-vinod7)
