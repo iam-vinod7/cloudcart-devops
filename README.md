@@ -48,7 +48,7 @@ flowchart LR
     PG --> PVC[PersistentVolumeClaim]
     PVC --> EBS[Amazon EBS gp3]
 
-    F1 --> METRICS[/metrics]
+    F1 --> METRICS["/metrics endpoint"]
     F2 --> METRICS
     F3 --> METRICS
     METRICS --> PROM[Prometheus]
