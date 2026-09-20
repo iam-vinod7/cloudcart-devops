@@ -57,6 +57,10 @@ Built the Flask image and connected it to PostgreSQL using Docker Compose. Used 
 
 Configured Jenkins to check out the repository, install Python dependencies, run pytest, build the container image, and publish build-number and `latest` tags to Docker Hub.
 
+**CI — Continuous Integration:** Built a Jenkins CI/CD workflow to integrate code changes, run automated Python tests, build Docker images, and publish versioned images to Docker Hub.
+
+**CD — Deployment:** Pushed the application image to Amazon ECR and deployed it to Amazon EKS with three replicas. Performed rolling updates, verified Pod health, monitored deployment status, and tested rollback.
+
 ### 4. Kubernetes with kind
 
 Deployed Flask and PostgreSQL to a local kind cluster. Worked with Services, ConfigMaps, Secrets, a StatefulSet, persistent storage, three application replicas, Pod self-healing, rolling updates, and rollback.
