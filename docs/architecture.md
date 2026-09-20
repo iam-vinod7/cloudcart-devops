@@ -1,248 +1,59 @@
-# CloudCart Project Architecture
+# CloudCart architecture and implementation boundaries
 
-## 1. Overview
+## Application
 
-CloudCart is a Flask-based learning project deployed as a containerized application on Amazon EKS. It uses PostgreSQL for persistent data, Amazon EBS for Kubernetes storage, an AWS Load Balancer for public access, and Prometheus plus Grafana for observability.
+CloudCart has two different demo surfaces: a static product catalogue/cart rendered by `templates/index.html`, and Flask's independent `/notes` API backed by SQLAlchemy. The catalogue, cart, and demo checkout are browser-side only. There is no product/order database or actual payment path. PostgreSQL persists **notes**, not shopping transactions.
 
-## 2. High-level architecture
+## CI and deployment
 
 ```mermaid
 flowchart TB
-    subgraph Development
-        DEV[Developer - WSL Ubuntu]
-        GH[GitHub Repository]
-        JENKINS[Jenkins]
-        TEST[pytest]
-        DOCKER[Docker Build]
-        HUB[Docker Hub]
-    end
+    GH["GitHub repository"] --> CI["Jenkinsfile"]
+    CI --> TEST["pytest"]
+    TEST --> BUILD["Docker image build"]
+    BUILD --> HUB["Docker Hub"]
 
-    subgraph AWS
-        ECR[Amazon ECR]
+    BUILD -. "Manual ECR push in AWS lab" .-> ECR["Amazon ECR"]
+    ECR --> FLASK["Flask Deployment on Amazon EKS"]
 
-        subgraph EKS[Amazon EKS Cluster]
-            LB[Kubernetes LoadBalancer Service]
+    WEB["Browser"] --> ELB["AWS Load Balancer"]
+    ELB --> SVC["Kubernetes flask-notes Service"]
+    SVC --> FLASK
+    FLASK --> DBSVC["PostgreSQL headless Service"]
+    DBSVC --> PG["PostgreSQL StatefulSet"]
+    PG --> CLAIM["1 Gi gp3 PVC"]
+    CLAIM --> VOLUME["Amazon EBS volume"]
 
-            subgraph App[Flask Deployment - 3 replicas]
-                P1[Flask Pod]
-                P2[Flask Pod]
-                P3[Flask Pod]
-            end
-
-            PGSVC[Headless PostgreSQL Service]
-            PG[PostgreSQL StatefulSet]
-            PVC[PVC - 1 Gi - gp3]
-
-            subgraph Monitoring
-                PROM[Prometheus]
-                GRAF[Grafana]
-            end
-        end
-
-        EBS[Amazon EBS gp3]
-    end
-
-    USER[User Browser] --> LB
-    DEV --> GH
-    GH --> JENKINS
-    JENKINS --> TEST
-    TEST --> DOCKER
-    DOCKER --> HUB
-    DOCKER --> ECR
-    ECR --> P1
-    ECR --> P2
-    ECR --> P3
-
-    LB --> P1
-    LB --> P2
-    LB --> P3
-
-    P1 --> PGSVC
-    P2 --> PGSVC
-    P3 --> PGSVC
-    PGSVC --> PG
-    PG --> PVC
-    PVC --> EBS
-
-    P1 --> PROM
-    P2 --> PROM
-    P3 --> PROM
-    PROM --> GRAF
+    FLASK --> METRIC["/metrics endpoint"]
+    METRIC --> PROM["Prometheus"]
+    PROM --> GRAF["Grafana"]
 ```
 
-## 3. CI flow
+The **committed Jenkinsfile ends at Docker Hub push**. In the AWS lab an image was separately tagged and pushed to ECR, then the Kubernetes deployment image was updated manually. The diagrams show the lab's runtime flow, **not a fully automated Jenkins-to-EKS release pipeline**.
 
-The Jenkins pipeline currently implements:
+## Evidence and limitations
 
-```text
-GitHub
-  ↓
-Jenkins Checkout
-  ↓
-Create Python virtual environment
-  ↓
-Install requirements
-  ↓
-pytest
-  ↓
-docker build
-  ↓
-Docker Hub
-```
+| Component | Committed artifact | Boundary |
+|---|---|---|
+| Flask/SQLAlchemy API + metrics | `app.py` | Notes DB; storefront cart is not backed by PostgreSQL. |
+| Browser demo | `templates/index.html` | Products/cart/checkout are simulated; no real orders or payments. |
+| Tests | `tests/test_app.py` | Unit/API tests only. |
+| Local container and DB | `Dockerfile`, `docker-compose.yml` | Compose uses local demo DB credentials. |
+| CI build and publish | `Jenkinsfile` | Docker Hub push only. |
+| EKS application layout | `k8s/flask-deployment.yaml`, `k8s/flask-service.yaml` | Three replicas and health probes; cluster provisioning not included. |
+| PostgreSQL persistent storage | `k8s/postgres-statefulset.yaml`, `k8s/storageclass.yaml` | Needs EBS CSI and IAM configured on the cluster. |
+| Grafana datasource | `grafana-values.yaml` | Grafana dashboard JSON and complete Helm install configuration are not committed. |
 
-Jenkins uses its credentials store for Docker Hub authentication.
+## Troubleshooting practised during the lab
 
-The AWS deployment image was separately pushed to Amazon ECR for EKS.
+- **Scheduling:** One `t3.small` node ran into a `Too many pods` scheduling condition; adding a second worker let three application replicas schedule.
+- **Persistent storage:** PostgreSQL initialization failed when the EBS filesystem's root contained `lost+found`; setting `PGDATA=/var/lib/postgresql/data/pgdata` resolved it. This setting remains in the StatefulSet manifest.
+- **Rolling releases:** Tested a new container image rollout and rollback.
+- **EBS CSI:** Installed the driver after correcting an IAM policy ARN and resolving a failed CloudFormation stack.
+- **Monitoring:** Prometheus targets were observed `UP`; Grafana was configured with Prometheus as a data source. The port-forward had to be restarted after a Grafana Pod rollout.
 
-## 4. Runtime request flow
+These are historical hands-on lab results. Infrastructure may have been removed to stop cloud charges; this repository does not claim a continuously running public service.
 
-```text
-Browser
-  ↓
-AWS Load Balancer
-  ↓
-flask-notes Kubernetes Service :80
-  ↓
-Flask Pod :5000
-  ↓
-PostgreSQL Service :5432
-  ↓
-PostgreSQL StatefulSet
-```
+## Important deployment/security boundaries
 
-The Service distributes application requests across 3 Flask replicas.
-
-## 5. Application layer
-
-The application is implemented with:
-
-- Flask
-- Flask-SQLAlchemy
-- psycopg
-- Prometheus Python client
-
-Important endpoints:
-
-| Route | Function |
-|---|---|
-| `/` | CloudCart web UI |
-| `GET /notes` | Read stored notes |
-| `POST /notes` | Create a note |
-| `GET /version` | Return current app version |
-| `GET /metrics` | Export Prometheus metrics |
-
-## 6. Kubernetes layer
-
-### Flask Deployment
-
-- 3 replicas
-- ECR image `:7`
-- port 5000
-- ConfigMap and Secret via `envFrom`
-- readiness probe
-- liveness probe
-
-### Flask Service
-
-- type: `LoadBalancer`
-- public port: 80
-- target port: 5000
-
-### PostgreSQL
-
-PostgreSQL runs as a StatefulSet because database storage must persist independently from the Pod lifecycle.
-
-The headless PostgreSQL Service provides stable in-cluster service discovery.
-
-## 7. Persistent storage
-
-The PostgreSQL StatefulSet requests:
-
-```text
-1 Gi
-ReadWriteOnce
-StorageClass: gp3
-```
-
-The `gp3` StorageClass uses:
-
-```text
-provisioner: ebs.csi.aws.com
-```
-
-The Amazon EBS CSI Driver dynamically provisions the backing EBS volume.
-
-### PGDATA fix
-
-When PostgreSQL was first mounted on the EBS filesystem, initialization encountered the filesystem-created `lost+found` directory.
-
-The StatefulSet was fixed by using:
-
-```text
-PGDATA=/var/lib/postgresql/data/pgdata
-```
-
-This stores PostgreSQL data in a clean subdirectory of the mounted volume.
-
-## 8. EKS scaling lesson
-
-With a single `t3.small` worker node, some Flask replicas remained Pending.
-
-`kubectl describe pod` showed a `Too many pods` scheduling condition.
-
-The managed node group was scaled to 2 worker nodes, after which all 3 Flask replicas scheduled successfully.
-
-## 9. Observability
-
-The application exports:
-
-```text
-cloudcart_http_requests_total
-cloudcart_http_request_duration_seconds
-```
-
-Prometheus scrapes the Flask Service at `/metrics`.
-
-Grafana uses Prometheus as its default data source.
-
-Dashboard panels:
-
-1. Total Requests
-2. Request Rate
-3. Traffic by Endpoint
-4. P95 Response Time
-
-## 10. Reliability features
-
-The project demonstrates:
-
-- multiple application replicas
-- Kubernetes self-healing
-- rolling updates
-- rollback testing
-- readiness probes
-- liveness probes
-- persistent database storage
-- metrics monitoring
-
-## 11. Secrets
-
-The real `k8s/secret.yaml` is intentionally excluded from version control.
-
-Only `k8s/secret.example.yaml` is committed.
-
-## 12. Current limitations
-
-This is a learning/portfolio project, not a hardened production platform.
-
-Production improvements would include:
-
-- Gunicorn instead of Flask development server
-- HTTPS/TLS
-- private database network controls
-- AWS Secrets Manager or External Secrets
-- Terraform-managed EKS infrastructure
-- autoscaling
-- alerting
-- backup and restore strategy
-- fully automated Jenkins-to-ECR/EKS deployment
+The demonstration used an HTTP LoadBalancer and Flask's development server with debug enabled. It is not production hardened. The committed Kubernetes secret file is a **placeholder example**; real secrets must remain untracked. No complete IaC for the VPC/EKS/IAM resources, automated EKS rollout, Grafana dashboard export, TLS setup, or production order/payment processing is included.
